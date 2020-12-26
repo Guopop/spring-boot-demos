@@ -1,5 +1,6 @@
 package me.guopop.springbootrabbitmqdemo.config;
 
+import me.guopop.springbootrabbitmqdemo.message.DeadQueueMessage;
 import me.guopop.springbootrabbitmqdemo.message.DirectExchangeMessage;
 import me.guopop.springbootrabbitmqdemo.message.FanoutExchangeMessage;
 import me.guopop.springbootrabbitmqdemo.message.TopicExchangeMessage;
@@ -29,6 +30,8 @@ public class RabbitConfig {
         return BindingBuilder.bind(directQueue()).to(directExchange()).with(DirectExchangeMessage.ROUTING_KEY);
     }
 
+    //------------------------------------------------------------------------------------------------
+
     @Bean
     public Queue topicQueue() {
         return new Queue(TopicExchangeMessage.QUEUE);
@@ -43,6 +46,8 @@ public class RabbitConfig {
     public Binding topicBinding() {
         return BindingBuilder.bind(topicQueue()).to(topicExchange()).with(TopicExchangeMessage.ROUTING_KEY);
     }
+
+    //------------------------------------------------------------------------------------------------
 
     @Bean
     public Queue fanoutQueueA() {
@@ -67,5 +72,38 @@ public class RabbitConfig {
     @Bean
     public Binding fanoutBindingB() {
         return BindingBuilder.bind(fanoutQueueB()).to(fanoutExchange());
+    }
+
+    //------------------------------------------------------------------------------------------------
+
+    @Bean
+    public Queue deadQueue() {
+        return QueueBuilder
+                .durable(DeadQueueMessage.QUEUE)
+                .exclusive()
+                .autoDelete()
+                .deadLetterExchange(DeadQueueMessage.EXCHANGE)
+                .deadLetterRoutingKey(DeadQueueMessage.DEAD_ROUTING_KEY)
+                .build();
+    }
+
+    @Bean
+    public Queue deadQueueDead() {
+        return new Queue(DeadQueueMessage.DEAD_QUEUE);
+    }
+
+    @Bean
+    public DirectExchange deadQueueExchange() {
+        return new DirectExchange(DeadQueueMessage.EXCHANGE);
+    }
+
+    @Bean
+    public Binding deadQueueBinding() {
+        return BindingBuilder.bind(deadQueue()).to(deadQueueExchange()).with(DeadQueueMessage.ROUTING_KEY);
+    }
+
+    @Bean
+    public Binding deadQueueDeadBinding() {
+        return BindingBuilder.bind(deadQueueDead()).to(deadQueueExchange()).with(DeadQueueMessage.DEAD_ROUTING_KEY);
     }
 }
