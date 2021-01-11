@@ -1,12 +1,12 @@
 package me.guopop.springbootrabbitmqdemo.config;
 
-import me.guopop.springbootrabbitmqdemo.message.DeadQueueMessage;
-import me.guopop.springbootrabbitmqdemo.message.DirectExchangeMessage;
-import me.guopop.springbootrabbitmqdemo.message.FanoutExchangeMessage;
-import me.guopop.springbootrabbitmqdemo.message.TopicExchangeMessage;
+import me.guopop.springbootrabbitmqdemo.message.*;
 import org.springframework.amqp.core.*;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * @author guopop
@@ -105,5 +105,65 @@ public class RabbitConfig {
     @Bean
     public Binding deadQueueDeadBinding() {
         return BindingBuilder.bind(deadQueueDead()).to(deadQueueExchange()).with(DeadQueueMessage.DEAD_ROUTING_KEY);
+    }
+
+    //------------------------------------------定时消息---------------------------------------------
+
+    @Bean
+    public Queue timingQueue() {
+        return QueueBuilder
+                .durable(TimingMessage.QUEUE)
+                .exclusive()
+                .autoDelete()
+                .ttl(10 * 1000)
+                .deadLetterExchange(TimingMessage.EXCHANGE)
+                .deadLetterRoutingKey(TimingMessage.DELAY_ROUTING_KEY)
+                .build();
+    }
+
+    @Bean
+    public Queue timingQueueDelay() {
+        return new Queue(TimingMessage.DELAY_QUEUE);
+    }
+
+    @Bean
+    public DirectExchange timingExchange() {
+        return new DirectExchange(TimingMessage.EXCHANGE);
+    }
+
+    @Bean
+    public Binding timingBinding() {
+        return BindingBuilder.bind(timingQueue()).to(timingExchange()).with(TimingMessage.ROUTING_KEY);
+    }
+
+    @Bean
+    public Binding timingBindingDelay() {
+        return BindingBuilder.bind(timingQueueDelay()).to(timingExchange()).with(TimingMessage.DELAY_ROUTING_KEY);
+    }
+
+    //----------------------------------------插件实现定时消息----------------------------------------
+
+    @Bean
+    public Queue timingPluginQueue() {
+        return new Queue(TimingPluginMessage.QUEUE);
+    }
+
+    @Bean
+    public CustomExchange timingPluginExchange() {
+        Map<String, Object> args = new HashMap<>();
+        args.put("x-delayed-type", "direct");
+        return new CustomExchange(TimingPluginMessage.EXCHANGE, "x-delayed-message", true, false, args);
+    }
+
+    @Bean
+    public Binding timingPluginBinding() {
+        return BindingBuilder.bind(timingPluginQueue()).to(timingPluginExchange()).with(TimingPluginMessage.ROUTING_KEY).noargs();
+    }
+
+    //--------------------------------------------集群消费---------------------------------------------------
+
+    @Bean
+    public TopicExchange clusteringExchange() {
+        return new TopicExchange(ClusteringMessage.EXCHANGE);
     }
 }
