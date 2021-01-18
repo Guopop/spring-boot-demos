@@ -80,7 +80,6 @@ public class RabbitConfig {
     public Queue deadQueue() {
         return QueueBuilder
                 .durable(DeadQueueMessage.QUEUE)
-                .exclusive()
                 .autoDelete()
                 .deadLetterExchange(DeadQueueMessage.EXCHANGE)
                 .deadLetterRoutingKey(DeadQueueMessage.DEAD_ROUTING_KEY)
@@ -166,4 +165,6 @@ public class RabbitConfig {
     public TopicExchange clusteringExchange() {
         return new TopicExchange(ClusteringMessage.EXCHANGE);
     }
+
+    //------------------------------------------------------------------------------------------------
 }
