@@ -2,8 +2,14 @@ package me.guopop.springbootrabbitmqdemo.config;
 
 import me.guopop.springbootrabbitmqdemo.message.*;
 import org.springframework.amqp.core.*;
+import org.springframework.amqp.rabbit.batch.BatchingStrategy;
+import org.springframework.amqp.rabbit.batch.SimpleBatchingStrategy;
+import org.springframework.amqp.rabbit.connection.ConnectionFactory;
+import org.springframework.amqp.rabbit.core.BatchingRabbitTemplate;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.scheduling.TaskScheduler;
+import org.springframework.scheduling.concurrent.ConcurrentTaskScheduler;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -14,6 +20,8 @@ import java.util.Map;
  */
 @Configuration
 public class RabbitConfig {
+
+    //----------------------------------------Direct Exchange---------------------------------------------------
 
     @Bean
     public Queue directQueue() {
@@ -30,7 +38,7 @@ public class RabbitConfig {
         return BindingBuilder.bind(directQueue()).to(directExchange()).with(DirectExchangeMessage.ROUTING_KEY);
     }
 
-    //------------------------------------------------------------------------------------------------
+    //------------------------------------------Topic Exchange----------------------------------------------------
 
     @Bean
     public Queue topicQueue() {
@@ -47,7 +55,7 @@ public class RabbitConfig {
         return BindingBuilder.bind(topicQueue()).to(topicExchange()).with(TopicExchangeMessage.ROUTING_KEY);
     }
 
-    //------------------------------------------------------------------------------------------------
+    //-----------------------------------------Fanout Exchange-------------------------------------------------------
 
     @Bean
     public Queue fanoutQueueA() {
@@ -74,7 +82,42 @@ public class RabbitConfig {
         return BindingBuilder.bind(fanoutQueueB()).to(fanoutExchange());
     }
 
-    //------------------------------------------------------------------------------------------------
+    //-----------------------------------------batch model-----------------------------------------------------
+
+    @Bean
+    public Queue batchQueue() {
+        return new Queue(BatchMessage.QUEUE);
+    }
+
+    @Bean
+    public DirectExchange batchExchange() {
+        return new DirectExchange(BatchMessage.EXCHANGE);
+    }
+
+    @Bean
+    public Binding batchBinding() {
+        return BindingBuilder.bind(batchQueue()).to(batchExchange()).with(BatchMessage.ROUTING_KEY);
+    }
+
+    @Bean
+    public BatchingRabbitTemplate batchingRabbitTemplate(ConnectionFactory connectionFactory) {
+        // 收集的消息最大条数
+        int batchSize = 16384;
+        // 每次批量发送的最大内存
+        int bufferLimit = 33554432;
+        // 收集最长等待时间
+        int timeout = 30000;
+        // BatchingStrategy 批量策略
+        BatchingStrategy batchingStrategy = new SimpleBatchingStrategy(batchSize, bufferLimit, timeout);
+
+        TaskScheduler taskScheduler = new ConcurrentTaskScheduler();
+
+        BatchingRabbitTemplate batchingRabbitTemplate = new BatchingRabbitTemplate(batchingStrategy, taskScheduler);
+        batchingRabbitTemplate.setConnectionFactory(connectionFactory);
+        return batchingRabbitTemplate;
+    }
+
+    //-----------------------------------------消费重试-------------------------------------------------------
 
     @Bean
     public Queue deadQueue() {
