@@ -1,34 +1,34 @@
 package me.guopop.springbootrabbitmqdemo.consumer;
 
 import lombok.extern.slf4j.Slf4j;
-import me.guopop.springbootrabbitmqdemo.message.ClusteringMessage;
+import me.guopop.springbootrabbitmqdemo.message.BroadcastMessage;
 import org.springframework.amqp.core.ExchangeTypes;
 import org.springframework.amqp.rabbit.annotation.*;
 import org.springframework.stereotype.Component;
 
 /**
  * @author guopop
- * @date 2021/1/4 10:31
+ * @date 2021/1/20 9:43
  */
 @Slf4j
 @Component
 @RabbitListener(
         bindings = @QueueBinding(
                 value = @Queue(
-                        name = ClusteringMessage.QUEUE + "-" + "GROUP-01"
+                        name = BroadcastMessage.QUEUE + "-" + "#{T(java.util.UUID).randomUUID()}",
+                        autoDelete = "true"
                 ),
                 exchange = @Exchange(
-                        name = ClusteringMessage.EXCHANGE,
+                        name = BroadcastMessage.EXCHANGE,
                         type = ExchangeTypes.TOPIC,
                         declare = "false"
-                ),
-                key = "#"
+                )
         )
 )
-public class ClusteringConsumer {
+public class BroadcastConsumer {
 
     @RabbitHandler
     public void onMessage(String message) {
-        log.info("[onMessage][thread:{}][msg:{}]", Thread.currentThread().getId(), message);
+        log.info("[onMessage][thread: {}][msg: {}]", Thread.currentThread().getId(), message);
     }
 }

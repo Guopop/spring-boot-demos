@@ -209,5 +209,10 @@ public class RabbitConfig {
         return new TopicExchange(ClusteringMessage.EXCHANGE);
     }
 
-    //------------------------------------------------------------------------------------------------
+    //---------------------------------------------广播消费---------------------------------------------------
+
+    @Bean
+    public TopicExchange broadcastingExchange() {
+        return new TopicExchange(BroadcastMessage.EXCHANGE);
+    }
 }
